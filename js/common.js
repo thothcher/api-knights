@@ -1,4 +1,4 @@
-/* common.js — small helpers + the page chrome (header, lesson nav, footer, theme).
+/* common.js — small helpers + the page chrome (header, server pill, theme).
    Everything is exposed on window.APIK. No dependencies, no build step. */
 (function () {
   'use strict';
@@ -132,12 +132,12 @@
 
   /* ---------- the six lessons ---------- */
   const PAGES = [
-    { id: 'home', href: 'index.html', title: 'What is an API?', short: 'API basics' },
-    { id: 'knights', href: 'knights.html', title: 'The Four Knights', short: 'Four Knights' },
-    { id: 'examples', href: 'examples.html', title: 'Real examples', short: 'Examples' },
-    { id: 'status', href: 'status.html', title: 'Status codes', short: 'Status codes' },
-    { id: 'quiz', href: 'quiz.html', title: 'Quiz', short: 'Quiz' },
-    { id: 'game', href: 'game.html', title: 'Castle game', short: 'Game' },
+    { id: 'home', href: 'index.html', short: 'How it works' },
+    { id: 'knights', href: 'knights.html', short: 'Methods' },
+    { id: 'examples', href: 'examples.html', short: 'Examples' },
+    { id: 'status', href: 'status.html', short: 'Status codes' },
+    { id: 'quiz', href: 'quiz.html', short: 'Quiz' },
+    { id: 'game', href: 'game.html', short: 'Game' },
   ];
 
   /* ---------- theme ---------- */
@@ -146,17 +146,10 @@
   function buildChrome() {
     injectSprite();
     const page = document.body.dataset.page;
-    const idx = PAGES.findIndex((p) => p.id === page);
-    const seen = new Set(store.get('visited', []));
     const header = el('header', { class: 'site-header' });
 
-    const nav = el('nav', { class: 'nav', 'aria-label': 'Lessons' },
-      el('ol', null, PAGES.map((p, i) => {
-        const here = p.id === page;
-        const done = seen.has(p.id) && !here;
-        return el('li', null, el('a', { href: p.href, class: done ? 'done' : '', 'aria-current': here ? 'page' : null },
-          el('span', { class: 'n' }, done ? icon('i-check') : String(i + 1)), p.short));
-      })));
+    const nav = el('nav', { class: 'nav', 'aria-label': 'Pages' },
+      el('ol', null, PAGES.map((p) => el('li', null, el('a', { href: p.href, 'aria-current': p.id === page ? 'page' : null }, p.short)))));
 
     const pill = el('button', { class: 'mode-pill', type: 'button', id: 'modePill' }, el('i'), el('span', { id: 'modeText' }));
     const themeBtn = el('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Switch light / dark theme' });
@@ -171,8 +164,7 @@
 
     header.append(el('div', { class: 'wrap bar' },
       el('a', { class: 'brand', href: 'index.html', 'aria-label': 'API Knights — home' },
-        el('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'API'),
-        el('span', null, 'API Knights')),
+        el('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'API')),
       nav,
       el('div', { class: 'tools' }, pill, themeBtn)));
     document.body.prepend(header);
@@ -197,28 +189,6 @@
     window.addEventListener('apik:net', paintPill);
     paintPill();
 
-    /* previous / next lesson cards + footer */
-    const main = $('#main');
-    if (main && idx >= 0) {
-      const prev = PAGES[idx - 1];
-      const next = PAGES[idx + 1];
-      const nav2 = el('nav', { class: 'lesson-nav', 'aria-label': 'Previous and next lesson' });
-      if (prev) nav2.append(el('a', { href: prev.href, class: 'prev' }, el('small', null, icon('i-arrow-left'), 'Prev'), el('b', null, prev.title)));
-      if (next) nav2.append(el('a', { href: next.href, class: 'next' + (prev ? '' : ' only-next') }, el('small', null, 'Next', icon('i-arrow-right')), el('b', null, next.title)));
-      main.append(nav2);
-    }
-    document.body.append(el('footer', { class: 'site-footer' }, el('div', { class: 'wrap' },
-      el('p', null, 'Data from the public ', el('a', { href: 'https://petstore.swagger.io/', target: '_blank', rel: 'noopener' }, 'Swagger Petstore'), '. Shared by everyone — use fake data only.'))));
-
-    /* scroll-reveal for blocks marked .reveal */
-    const targets = $$('.reveal');
-    if ('IntersectionObserver' in window && !reduced()) {
-      const io = new IntersectionObserver((entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: 0.12 });
-      targets.forEach((t) => io.observe(t));
-    } else targets.forEach((t) => t.classList.add('in'));
-
-    /* remember progress (after painting, so the current page shows as "here") */
-    if (page) { seen.add(page); store.set('visited', [...seen]); }
   }
 
   window.APIK = { store, $, $$, el, esc, icon, sleep, rand, pick, shuffle, reduced, toast, copy, PAGES };

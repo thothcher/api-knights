@@ -1,4 +1,4 @@
-/* ui.js — shared building blocks: pet cards, the request/response inspector, syntax colours,
+/* ui.js — shared building blocks: pet cards, JSON colouring, the request preview,
    short explanations of status codes. All text from the API goes through textContent / esc(). */
 (function () {
   'use strict';
@@ -117,79 +117,14 @@
     return colourJSON(lines.join('\n')) + (cut ? '\n<span class="j-cm">…</span>' : '');
   }
 
-  const JS_RE = /(\/\/.*)|("(?:\\.|[^"\\])*")|\b(const|await|async|let|return|new)\b|\b(fetch|JSON|console)\b/g;
-  function colourJS(code) {
-    let html = '', last = 0, m;
-    JS_RE.lastIndex = 0;
-    while ((m = JS_RE.exec(code))) {
-      html += esc(code.slice(last, m.index));
-      if (m[1]) html += `<span class="j-cm">${esc(m[1])}</span>`;
-      else if (m[2]) html += `<span class="j-str">${esc(m[2])}</span>`;
-      else if (m[3]) html += `<span class="j-kw">${m[3]}</span>`;
-      else html += `<span class="j-fn">${m[4]}</span>`;
-      last = JS_RE.lastIndex;
-    }
-    return html + esc(code.slice(last));
+  /* What the frontend writes down before sending: "GET /pet/findByStatus?status=available" plus the JSON body, if any. */
+  function requestHTML(spec) {
+    const d = API.describe(spec);
+    const path = maskUrl(d.url.replace(/^https?:\/\/[^/]+\/v2/, ''));
+    let h = `<span class="tok-method m-${d.method.toLowerCase()}">${d.method}</span> ${esc(path)}`;
+    if (d.body !== undefined) h += '\n\n' + jsonHTML(d.body, 9);
+    return h;
   }
 
-  /* The code a developer would write in the frontend project for this request. */
-  function fetchSnippet(spec, tail) {
-    const url = maskUrl(API.liveUrl(spec.path, spec.query));
-    const m = (spec.method || 'GET').toUpperCase();
-    const hasBody = spec.body !== undefined;
-    const headers = { ...(hasBody ? { 'Content-Type': 'application/json' } : {}), ...(spec.headers || {}) };
-    const lines = [];
-    if (m !== 'GET') lines.push(`  method: "${m}",`);
-    if (Object.keys(headers).length) {
-      lines.push(`  headers: { ${Object.entries(headers).map(([k, v]) => `${JSON.stringify(k)}: ${JSON.stringify(v)}`).join(', ')} },`);
-    }
-    if (hasBody) {
-      const body = JSON.stringify(maskSecrets(spec.body), null, 2).split('\n').join('\n  ');
-      lines.push(`  body: JSON.stringify(${body}),`);
-    }
-    let code = lines.length
-      ? `const res = await fetch("${url}", {\n${lines.join('\n')}\n});\n`
-      : `const res = await fetch("${url}");\n`;
-    code += tail || (m === 'DELETE'
-      ? 'console.log(res.status);\n'
-      : 'const data = await res.json();   // JSON → object\nconsole.log(res.status, data);\n');
-    return code;
-  }
-  function codeBox() {
-    const pre = el('pre', { class: 'code', tabindex: '0', 'aria-label': 'Example frontend code' });
-    const btn = el('button', { class: 'btn btn--sm copy', type: 'button', onclick: () => APIK.copy(pre.textContent) }, icon('i-copy'), 'Copy');
-    const box = el('div', { class: 'codebox' }, pre, btn);
-    box.set = (text) => { pre.innerHTML = colourJS(text); };
-    return box;
-  }
-
-  /* ---------- the inspector: request + response ---------- */
-  function inspector(root) {
-    root.classList.add('insp');
-    const reqPre = el('pre', { class: 'code', tabindex: '0', 'aria-label': 'The request that was sent' });
-    const resPre = el('pre', { class: 'code', tabindex: '0', 'aria-label': 'The response that came back' });
-    const meta = el('div', { class: 'insp-meta' });
-    root.replaceChildren(
-      el('section', { class: 'insp-col' }, el('h3', { class: 'insp-h' }, 'Request'), reqPre),
-      el('section', { class: 'insp-col' }, el('h3', { class: 'insp-h' }, 'Response'), meta, resPre));
-    return {
-      showRequest(r) {
-        let h = `<span class="tok-method m-${r.method.toLowerCase()}">${r.method}</span> ${esc(maskUrl(r.url))}\n`;
-        for (const [k, v] of Object.entries(r.headers || {})) h += `<span class="tok-h">${esc(k)}:</span> ${esc(v)}\n`;
-        if (r.body !== undefined) h += '\n' + jsonHTML(r.body, 22);
-        reqPre.innerHTML = h;
-      },
-      showResponse(res) {
-        meta.replaceChildren(
-          el('span', { class: 'spill ' + toneOf(res.status) }, `${res.status || '×'} ${res.statusText || ''}`.trim()),
-          el('span', { class: 'muted' }, `${res.ms} ms`),
-          el('span', { class: 'src ' + (res.source === 'live' ? 'live' : 'practice') }, res.source === 'live' ? 'Live' : (res.fellBack ? 'Offline → practice' : 'Practice')));
-        resPre.innerHTML = jsonHTML(res.data);
-      },
-      clearResponse() { meta.replaceChildren(); resPre.innerHTML = '<span class="j-cm">…</span>'; },
-      reset() { reqPre.textContent = ''; resPre.textContent = ''; meta.replaceChildren(); },
-    };
-  }
-
-  window.UI = { family, toneOf, tileOf, pickPets, petCard, dbRowOf, explain, messageOf, statusScreen, banner, jsonHTML, colourJSON, colourJS, trimForDisplay, maskSecrets, fetchSnippet, codeBox, inspector };
+  window.UI = { family, toneOf, tileOf, pickPets, petCard, dbRowOf, explain, messageOf, statusScreen, banner, jsonHTML, requestHTML };
 })();

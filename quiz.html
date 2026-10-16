@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Quiz · API Knights</title>
-  <meta name="description" content="A 10-question quiz about APIs, methods, status codes and JSON.">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%235a2a27'/%3E%3Ctext x='16' y='21' font-family='monospace' font-weight='700' font-size='11' text-anchor='middle' fill='%23f8f5f1'%3EAPI%3C/text%3E%3C/svg%3E">
+  <meta name="description" content="How an API works, animated: request, server, database, response, screen.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Ctext x='16' y='21' font-family='monospace' font-weight='700' font-size='11' text-anchor='middle' fill='white'%3EAPI%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/styles.css">
   <script>try{var t=JSON.parse(localStorage.getItem('apik.theme'));if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
   <script defer src="js/common.js"></script>
@@ -14,11 +14,8 @@
 </head>
 <body data-page="quiz">
 <main id="main" class="wrap">
-  <section class="hero hero--sm center">
-    <span class="eyebrow">05 — Quiz</span>
-    <h1>Test <span class="dim">yourself</span></h1>
-  </section>
-  <section class="block stage" style="padding-top:8px">
+  <h1 class="sr-only">Quiz</h1>
+  <section class="stage">
     <div class="panel" id="quiz" aria-live="polite"></div>
   </section>
 </main>

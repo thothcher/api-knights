@@ -1,4 +1,4 @@
-/* examples.js — Lesson 3: five everyday API flows (get data, register, log in, edit profile, delete account).
+/* examples.js — five everyday API flows (get data, register, log in, edit profile, delete account).
    The forms live on the diagram's "screen", so submitting one sends a packet across the scheme. */
 (function () {
   'use strict';
@@ -19,12 +19,9 @@
 
   const scheme = Scheme.create($('#scheme'), {
     title: 'App ⇄ Server',
-    server: { title: 'Swagger Petstore', sub: 'API + database', dbTitle: 'Database' },
-    screen: { title: 'App screen', sub: 'the user types here', icon: 'i-monitor', url: 'pet-shop.app' },
+    server: { title: 'Swagger Petstore', dbTitle: 'Database' },
+    screen: { title: 'App screen', icon: 'i-monitor', url: 'pet-shop.app' },
   });
-  const inspector = UI.inspector($('#insp'));
-  const codeBox = UI.codeBox();
-  $('#code').append(codeBox);
   const S = scheme.screen;
 
   /* ---------- small helpers ---------- */
@@ -37,13 +34,9 @@
   async function go(spec, h) {
     if (scheme.busy) return null;
     setBusy(true);
-    codeBox.set(UI.fetchSnippet(spec, h.tail));
-    inspector.showRequest(API.describe(spec));
-    inspector.clearResponse();
     const res = await scheme.run({
-      method: spec.method, clickLabel: h.click || 'submit', label: `${spec.method} ${shortPath(spec.path)}`,
+      method: spec.method, clickLabel: h.click || 'submit', label: `${spec.method} ${shortPath(spec.path)}`, request: spec,
       action: () => API.request(spec),
-      onResult: (r) => { if (r.url) inspector.showRequest(r); inspector.showResponse(r); },
       dbEffect: h.db,
       render: h.render,
     });
@@ -60,9 +53,7 @@
      ==================================================================== */
   const SCENARIOS = {
     list: {
-      method: 'GET', title: 'Get data', sub: 'load a list', url: 'pet-shop.app/pets',
-      story: 'The app asks the server for a list.',
-      notice: ['<code>?status=available</code> filters the answer.', 'The answer is a list; the frontend draws one row per item.'],
+      method: 'GET', title: 'Get data', url: 'pet-shop.app/pets',
       rows: () => [{ key: 's1', tile: 'R', text: 'Rex', sub: '#1 · available' }, { key: 's2', tile: 'M', text: 'Misty', sub: '#2 · available' }, { key: 's3', tile: 'G', text: 'Goldie', sub: '#3 · pending' }],
       mount() {
         const sel = el('select', { id: 'st' }, ['available', 'pending', 'sold'].map((s) => el('option', { value: s }, s)));
@@ -92,9 +83,7 @@
     },
 
     register: {
-      method: 'POST', title: 'Register', sub: 'create an account', url: 'pet-shop.app/sign-up',
-      story: 'The app sends a new account to the server.',
-      notice: ['The form data travels in the body, as JSON.', 'Try the practice server: same name twice gives 409, a short password gives 400.'],
+      method: 'POST', title: 'Register', url: 'pet-shop.app/sign-up',
       rows: () => userRows(),
       mount() {
         const form = el('form', { class: 'form', novalidate: true, onsubmit: async (e) => {
@@ -123,9 +112,7 @@
     },
 
     login: {
-      method: 'GET', title: 'Log in', sub: 'prove who you are', url: 'pet-shop.app/login',
-      story: 'The app asks the server to check a login.',
-      notice: ['Password in the URL is a bad habit. Real apps use POST over HTTPS.', 'The public server accepts any password. Use the practice server to see a real 401.'],
+      method: 'GET', title: 'Log in', url: 'pet-shop.app/login',
       rows: () => userRows(),
       mount() {
         const form = el('form', { class: 'form', onsubmit: async (e) => {
@@ -133,7 +120,6 @@
           const username = $('#lu').value.trim(), typed = $('#lp').value, wrong = $('#wrong').checked;
           await go({ method: 'GET', path: '/user/login', query: { username, password: wrong ? 'wrong-password' : wire(typed) } }, {
             click: 'log in',
-            tail: 'const data = await res.json();\nconsole.log(res.status, data.message);   // session token\n',
             db: (res, db) => { if (res.ok) db.mark(username, 'read'); },
             render: (res) => {
               if (!res.ok) { showBanner(res, UI.messageOf(res) || undefined); return; }
@@ -157,9 +143,7 @@
     },
 
     update: {
-      method: 'PUT', title: 'Edit profile', sub: 'replace what is saved', url: 'pet-shop.app/profile',
-      story: 'The app sends the new version of the profile.',
-      notice: ['PUT sends the whole profile. The address says who.', 'Reload with GET to prove it changed. Register first, or you get a 404.'],
+      method: 'PUT', title: 'Edit profile', url: 'pet-shop.app/profile',
       rows: () => userRows(),
       mount() {
         const form = el('form', { class: 'form', onsubmit: async (e) => {
@@ -201,9 +185,7 @@
     },
 
     delete: {
-      method: 'DELETE', title: 'Delete account', sub: 'remove it', url: 'pet-shop.app/profile/delete',
-      story: 'The app asks first, then removes the account.',
-      notice: ['Confirm before a destructive request.', 'Delete twice: the second answer is 404.'],
+      method: 'DELETE', title: 'Delete account', url: 'pet-shop.app/profile/delete',
       rows: () => userRows(),
       mount() {
         const area = el('div');
@@ -217,7 +199,6 @@
         async function doDelete() {
           await go({ method: 'DELETE', path: '/user/' + encodeURIComponent(session.username) }, {
             click: 'delete',
-            tail: 'console.log(res.status);   // 200/204 = gone, 404 = already gone\n',
             db: (res, db) => { if (res.ok) db.remove(session.username); },
             render: (res) => {
               if (res.ok) { session.registered = false; saveSession(); }
@@ -236,9 +217,8 @@
   const tabs = $('#tabs');
   ORDER.forEach((id) => {
     const s = SCENARIOS[id];
-    tabs.append(el('button', { type: 'button', role: 'tab', id: 'tab-' + id, class: `knight m-${s.method.toLowerCase()}`, 'aria-selected': 'false', tabindex: '-1', dataset: { id } },
-      el('span', { class: 'shield' }, icon(ICON[s.method])),
-      el('span', null, el('span', { class: 'nm', style: 'font-size:1.05rem;font-family:var(--font);letter-spacing:-.01em' }, s.title), el('span', { class: 'rl' }, s.method))));
+    tabs.append(el('button', { type: 'button', role: 'tab', id: 'tab-' + id, class: `tab tab--text m-${s.method.toLowerCase()}`, 'aria-selected': 'false', tabindex: '-1', dataset: { id } },
+      el('span', { class: 'nm' }, icon(ICON[s.method]), s.title), el('span', { class: 'rl' }, s.method)));
   });
 
   let current = null;
@@ -247,36 +227,14 @@
     if (!SCENARIOS[id]) id = 'list';
     current = id;
     const s = SCENARIOS[id];
-    $$('.knight', tabs).forEach((t) => { const on = t.dataset.id === id; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
-    const story = $('#story');
-    story.className = `card m-${s.method.toLowerCase()}`;
-    story.style.boxShadow = 'inset 0 5px 0 var(--c)';
-    story.replaceChildren(
-      el('p', { style: 'font-size:1.15rem;font-weight:700;margin:0 0 8px' }, s.story),
-      el('ul', { style: 'margin:0;padding-left:1.2em;display:grid;gap:4px;color:var(--ink-2);font-size:.95rem' }, s.notice.map((n) => el('li', { html: n }))));
+    $$('.tab', tabs).forEach((t) => { const on = t.dataset.id === id; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
     scheme.reset();
     scheme.apply({ screen: { url: s.url } });
     scheme.db.set(s.rows());
     s.mount();
-    // show the request this scenario will send, before anything is sent
-    const preview = previewSpec(id);
-    codeBox.set(UI.fetchSnippet(preview.spec, preview.tail));
-    inspector.reset();
-    inspector.showRequest(API.describe(preview.spec));
     try { history.replaceState(null, '', '#' + id); } catch (e) { /* ignore */ }
   }
-  function previewSpec(id) {
-    const u = encodeURIComponent(session.username);
-    switch (id) {
-      case 'list': return { spec: { method: 'GET', path: '/pet/findByStatus', query: { status: 'available' } } };
-      case 'register': return { spec: { method: 'POST', path: '/user', body: { id: session.id, username: session.username, firstName: 'Demo', lastName: 'Knight', email: emailOf(), password: FAKE_PW, phone: '', userStatus: 1 } } };
-      case 'login': return { spec: { method: 'GET', path: '/user/login', query: { username: session.username, password: FAKE_PW } }, tail: 'const data = await res.json();\nconsole.log(res.status, data.message);   // session token\n' };
-      case 'update': return { spec: { method: 'PUT', path: '/user/' + u, body: { id: session.id, username: session.username, firstName: session.firstName, lastName: session.lastName, email: emailOf(), password: FAKE_PW, phone: '', userStatus: 1 } } };
-      default: return { spec: { method: 'DELETE', path: '/user/' + u } };
-    }
-  }
-
-  tabs.addEventListener('click', (e) => { const t = e.target.closest('.knight'); if (t) select(t.dataset.id); });
+  tabs.addEventListener('click', (e) => { const t = e.target.closest('.tab'); if (t) select(t.dataset.id); });
   tabs.addEventListener('keydown', (e) => {
     const i = ORDER.indexOf(current);
     const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];

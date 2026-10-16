@@ -6,7 +6,7 @@
      scheme.screen            the element where a page draws its "app"
      scheme.db                little database table (set / add / update / remove / mark)
      scheme.run({...})        plays one full round trip, doing a REAL request in the middle
-*/
+   The node that holds the data turns solid, so the audience always knows where it is. */
 (function () {
   'use strict';
   const { el, esc, sleep, store, reduced } = APIK;
@@ -23,18 +23,16 @@
 
   const DEFAULTS = {
     title: 'Request → Response',
-    server: { title: 'Swagger Petstore', sub: 'API + database', icon: 'i-server', dbTitle: 'Database' },
-    front: { title: 'Frontend', sub: 'HTML + JavaScript', icon: 'i-code' },
-    screen: { title: 'Screen', sub: 'What the user sees', icon: 'i-monitor', url: 'pet-shop.app' },
-    link1: 'API', link2: 'App',
+    server: { title: 'Swagger Petstore', icon: 'i-server', dbTitle: 'Database' },
+    front: { title: 'Frontend', icon: 'i-code' },
+    screen: { title: 'Screen', icon: 'i-monitor', url: 'pet-shop.app' },
     steps: STEPS, captions: CAPTIONS,
     laneNames: ['request', 'response'],
-    rows: [],
-    legend: true,
   };
 
   let uid = 0;
-  const speed = () => (store.get('slowmo', false) ? 2.1 : 1);
+  const SLOW = 2.4;
+  const speed = () => (store.get('slowmo', false) ? SLOW : 1);
 
   function create(root, userCfg) {
     let cfg = merge(DEFAULTS, userCfg || {});
@@ -43,72 +41,73 @@
     root.innerHTML = `
       <div class="scheme-bar">
         <h3 data-ref="title"></h3>
-        <div class="legend" aria-hidden="true">
-          <span class="req"><i></i> Request</span><span class="res"><i></i> Response</span>
-        </div>
-        <label class="switch" for="slow-${id}"><input type="checkbox" id="slow-${id}"> Slow motion</label>
+        <button type="button" class="slowmo" id="slow-${id}" aria-pressed="false" title="Slow motion (S)"><svg class="ico" aria-hidden="true"><use href="#i-clock"></use></svg><span>Slow motion</span><em></em></button>
       </div>
       <div class="scheme-grid">
         <section class="node node--server" data-node="server" aria-label="Server and database">
-          <div class="node-head"><span class="node-ico"><svg class="ico" aria-hidden="true"><use data-ref="serverIco" href="#i-server"></use></svg></span>
-            <div><b data-ref="serverTitle"></b><small data-ref="serverSub"></small></div></div>
+          <div class="node-head"><span class="node-ico"><svg class="ico" aria-hidden="true"><use data-ref="serverIco" href="#i-server"></use></svg></span><b data-ref="serverTitle"></b></div>
           <div class="db"><div class="db-title"><svg class="ico" aria-hidden="true"><use href="#i-database"></use></svg><span data-ref="dbTitle"></span></div><div class="db-rows" data-ref="rows"></div></div>
-          <p class="node-note" data-ref="serverNote" aria-hidden="true"></p>
         </section>
-        <div class="link" data-ref="link1">
-          <span class="link-tag" data-ref="link1Tag"></span>
+        <div class="link">
           <div class="lane" data-dir="toServer" data-ref="l1req"><span class="lane-name" data-ref="n1"></span></div>
           <div class="lane" data-dir="toScreen" data-ref="l1res"><span class="lane-name" data-ref="n2"></span></div>
         </div>
         <section class="node node--front" data-node="front" aria-label="Frontend project">
-          <div class="node-head"><span class="node-ico"><svg class="ico" aria-hidden="true"><use data-ref="frontIco" href="#i-code"></use></svg></span>
-            <div><b data-ref="frontTitle"></b><small data-ref="frontSub"></small></div></div>
-          <pre class="mini-json" data-ref="inHand" aria-label="Data the frontend received"></pre>
-          <p class="node-note" data-ref="frontNote" aria-hidden="true"></p>
+          <div class="node-head"><span class="node-ico"><svg class="ico" aria-hidden="true"><use data-ref="frontIco" href="#i-code"></use></svg></span><b data-ref="frontTitle"></b></div>
+          <div class="hand" data-ref="hand"><span class="hand-tag" data-ref="handTag"></span><pre data-ref="inHand" aria-label="What the frontend sends and receives"></pre></div>
         </section>
-        <div class="link" data-ref="link2">
-          <span class="link-tag" data-ref="link2Tag"></span>
+        <div class="link">
           <div class="lane" data-dir="toServer" data-ref="l2req"></div>
           <div class="lane" data-dir="toScreen" data-ref="l2res"></div>
         </div>
         <section class="node node--screen" data-node="screen" aria-label="Screen">
-          <div class="node-head"><span class="node-ico"><svg class="ico" aria-hidden="true"><use data-ref="screenIco" href="#i-monitor"></use></svg></span>
-            <div><b data-ref="screenTitle"></b><small data-ref="screenSub"></small></div></div>
+          <div class="node-head"><span class="node-ico"><svg class="ico" aria-hidden="true"><use data-ref="screenIco" href="#i-monitor"></use></svg></span><b data-ref="screenTitle"></b></div>
           <div class="browser"><div class="browser-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="browser-url" data-ref="url"></span></div>
             <div class="screen" data-ref="screen"></div></div>
         </section>
       </div>
       <ol class="steps" data-ref="steps">${STEPS.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
-      <p class="caption" data-ref="caption" role="status" aria-live="polite">Press send.</p>`;
+      <p class="sr-only" data-ref="caption" role="status" aria-live="polite"></p>`;
 
     const ref = (n) => root.querySelector(`[data-ref="${n}"]`);
     const nodes = { server: root.querySelector('[data-node="server"]'), front: root.querySelector('[data-node="front"]'), screen: root.querySelector('[data-node="screen"]') };
     const lanes = { l1req: ref('l1req'), l1res: ref('l1res'), l2req: ref('l2req'), l2res: ref('l2res') };
     const stepEls = Array.from(ref('steps').children);
-    const slow = root.querySelector(`#slow-${id}`);
-    slow.checked = !!store.get('slowmo', false);
-    slow.addEventListener('change', () => store.set('slowmo', slow.checked));
+    const hand = ref('hand');
     let busy = false;
 
-    /* ---- (re)label everything — used when the Home page flips between "Real app" and "Restaurant" ---- */
+    /* ---- slow motion: a big button, and the S key ---- */
+    const slowBtn = root.querySelector('.slowmo');
+    const paintSlow = () => {
+      const on = !!store.get('slowmo', false);
+      slowBtn.setAttribute('aria-pressed', String(on));
+      slowBtn.querySelector('em').textContent = on ? 'ON' : 'OFF';
+    };
+    slowBtn.addEventListener('click', () => { store.set('slowmo', !store.get('slowmo', false)); paintSlow(); });
+    paintSlow();
+    document.addEventListener('keydown', (e) => {
+      if (!root.isConnected || e.ctrlKey || e.metaKey || e.altKey || e.key.toLowerCase() !== 's') return;
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      slowBtn.click();
+    });
+
+    /* ---- (re)label everything — used when a page flips vocabulary (e.g. "Real app" / "Restaurant") ---- */
     function apply(next) {
       cfg = merge(cfg, next || {});
       ref('title').textContent = cfg.title;
-      ref('serverTitle').textContent = cfg.server.title; ref('serverSub').textContent = cfg.server.sub;
+      ref('serverTitle').textContent = cfg.server.title;
       ref('dbTitle').textContent = cfg.server.dbTitle;
-      ref('frontTitle').textContent = cfg.front.title; ref('frontSub').textContent = cfg.front.sub;
-      ref('screenTitle').textContent = cfg.screen.title; ref('screenSub').textContent = cfg.screen.sub;
+      ref('frontTitle').textContent = cfg.front.title;
+      ref('screenTitle').textContent = cfg.screen.title;
       ref('url').textContent = cfg.screen.url;
-      ref('link1Tag').textContent = cfg.link1; ref('link2Tag').textContent = cfg.link2;
       ref('n1').textContent = cfg.laneNames[0]; ref('n2').textContent = cfg.laneNames[1];
       stepEls.forEach((li, i) => { li.textContent = cfg.steps[i]; });
       ref('serverIco').setAttribute('href', '#' + cfg.server.icon);
       ref('frontIco').setAttribute('href', '#' + cfg.front.icon);
       ref('screenIco').setAttribute('href', '#' + cfg.screen.icon);
-      root.querySelector('.legend').hidden = !cfg.legend;
     }
 
-    /* ---- node highlight + captions ---- */
+    /* ---- node highlight + steps ---- */
     function activate(which) {
       for (const [k, n] of Object.entries(nodes)) n.classList.toggle('is-active', k === which);
     }
@@ -119,11 +118,12 @@
       });
       if (n >= 1) ref('caption').textContent = cfg.captions[n - 1];
     }
-    const note = (which, text, working) => {
-      const p = ref(which + 'Note');
-      p.textContent = text;
-      p.classList.toggle('busy', !!working);
-    };
+    /* the frontend's hand: first the request it builds, then the response it receives */
+    function showHand(tag, html, fresh) {
+      ref('handTag').textContent = tag;
+      ref('inHand').innerHTML = html;
+      hand.classList.toggle('fresh', !!fresh);
+    }
 
     /* ---- the little database ---- */
     const rowsEl = ref('rows');
@@ -190,6 +190,7 @@
     /* ---- one full round trip ----
        spec = {
          method:'GET', label:'GET /pet/1',            the text on the request packet
+         request: {method, path, query, body},        what the frontend writes down (shown in its box)
          action: async () => API.request(...),        the REAL call (runs while the packet flies)
          onRequest(): called as the request leaves,  onResult(res): called when the answer is known (before it flies back)
          dbEffect(res, db): what happens inside the database,
@@ -201,37 +202,33 @@
       const tone = (spec.method || 'GET').toLowerCase();
       let res;
       try {
-        setStep(1); activate('screen'); note('front', 'idle'); note('server', 'idle');
-        ref('inHand').classList.remove('fresh'); ref('inHand').textContent = '';
+        setStep(1); activate('screen'); showHand('', '');
         await packet('l2req', { label: spec.clickLabel || 'click', tone: 'neutral', ms: 560 });
 
-        setStep(2); activate('front'); note('front', 'building request', true);
+        setStep(2); activate('front');
+        showHand('request', spec.request ? window.UI.requestHTML(spec.request) : esc(spec.label || ''));
         if (spec.onRequest) spec.onRequest();
         const pending = Promise.resolve().then(spec.action).catch((e) => ({ status: 0, statusText: 'Error', ok: false, ms: 0, source: 'practice', data: { message: String(e && e.message || e) } }));
         await packet('l1req', { label: spec.label, tone, ms: 1050 });
 
-        setStep(3); activate('server'); note('server', 'working', true);
+        setStep(3); activate('server');
         const [r] = await Promise.all([pending, hold(760)]);
         res = r;
         if (spec.dbEffect) spec.dbEffect(res, db);
         if (spec.onResult) spec.onResult(res);
-        note('server', `${res.status || '×'} ${res.statusText || ''}`.trim());
         await hold(380);
 
         setStep(4); activate('server');
         const fam = res.status ? Math.floor(res.status / 100) : 0;
         await packet('l1res', { label: `${res.status || '×'} ${res.statusText || 'No answer'}`, tone: 's' + fam, ms: 1050 });
 
-        setStep(5); activate('front'); note('front', res.ok ? 'got JSON' : 'got an error');
-        const hand = ref('inHand');
-        hand.innerHTML = window.UI.jsonHTML(res.data, 9);
-        hand.classList.add('fresh');
+        setStep(5); activate('front');
+        showHand('response', window.UI.jsonHTML(res.data, 9), true);
         await packet('l2res', { label: 'render', tone: 'neutral', ms: 560 });
 
-        setStep(6); activate('screen'); note('front', 'done');
+        setStep(6); activate('screen');
         if (spec.render) await spec.render(res);
         stepEls.forEach((li) => { li.classList.remove('is-active'); li.classList.add('is-done'); });
-        ref('caption').textContent = cfg.captions[5];
         await hold(500);
       } finally {
         activate(null); busy = false; root.dataset.busy = 'false';
@@ -242,8 +239,7 @@
     function reset() {
       setStep(0); activate(null);
       stepEls.forEach((li) => li.classList.remove('is-done', 'is-active'));
-      ref('inHand').textContent = ''; ref('caption').textContent = 'Press send.';
-      note('front', ''); note('server', '');
+      showHand('', '');
     }
 
     apply(cfg);
