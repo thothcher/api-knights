@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Status codes · API Knights</title>
+  <meta name="description" content="HTTP status codes — trigger each one and see what the user sees.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%235a2a27'/%3E%3Ctext x='16' y='21' font-family='monospace' font-weight='700' font-size='11' text-anchor='middle' fill='%23f8f5f1'%3EAPI%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>try{var t=JSON.parse(localStorage.getItem('apik.theme'));if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+  <script defer src="js/common.js"></script>
+  <script defer src="js/api.js"></script>
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/scheme.js"></script>
+  <script defer src="js/status.js"></script>
+</head>
+<body data-page="status">
+<main id="main" class="wrap">
+
+  <section class="hero hero--sm">
+    <span class="eyebrow">04 — Status codes</span>
+    <h1>How did it <span class="dim">go?</span></h1>
+    <p class="lead">Read the first digit.</p>
+  </section>
+
+  <section class="block" style="padding-top:8px" aria-labelledby="fam-h">
+    <h2 class="sr-only" id="fam-h">Five families</h2>
+    <div class="fams" id="fams" role="group" aria-label="Status code families"></div>
+  </section>
+
+  <section class="block" style="padding-top:8px" aria-labelledby="lab-h">
+    <div class="block-head"><h2 id="lab-h">Make each one happen</h2></div>
+    <div class="codes" id="chips" role="group" aria-label="Status codes"></div>
+    <div class="cdetail" id="detail" aria-live="polite"></div>
+    <div id="scheme"></div>
+    <div style="margin-top:14px" id="insp"></div>
+    <span class="label">Code</span>
+    <div id="code"></div>
+  </section>
+</main>
+</body>
+</html>

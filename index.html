@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What is an API? · API Knights</title>
+  <meta name="description" content="A visual, animated guide to how APIs work.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%235a2a27'/%3E%3Ctext x='16' y='21' font-family='monospace' font-weight='700' font-size='11' text-anchor='middle' fill='%23f8f5f1'%3EAPI%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>try{var t=JSON.parse(localStorage.getItem('apik.theme'));if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+  <script defer src="js/common.js"></script>
+  <script defer src="js/api.js"></script>
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/scheme.js"></script>
+  <script defer src="js/home.js"></script>
+</head>
+<body data-page="home">
+<main id="main" class="wrap">
+
+  <section class="hero">
+    <span class="eyebrow">01 — Basics</span>
+    <h1>What is an <span class="dim">API</span>?</h1>
+    <p class="lead">A waiter between you and the kitchen.</p>
+    <div class="hero-cta">
+      <a class="btn btn--primary btn--lg" href="#try">Watch it move <svg class="ico" aria-hidden="true"><use href="#i-arrow-right"></use></svg></a>
+    </div>
+  </section>
+
+  <section class="block" id="try" aria-labelledby="try-h">
+    <div class="block-head"><h2 id="try-h">Request → Response</h2></div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+      <div class="seg" role="group" aria-label="View">
+        <button type="button" data-view="real" aria-pressed="true">Real app</button>
+        <button type="button" data-view="food" aria-pressed="false">Restaurant</button>
+      </div>
+      <button type="button" class="btn btn--primary" id="play"><svg class="ico" aria-hidden="true"><use href="#i-play"></use></svg> <span>Send request</span></button>
+    </div>
+    <div id="scheme"></div>
+    <div class="grid cols-3" style="margin-top:14px">
+      <div class="card reveal"><h3><span class="badge-n">1</span> Ask</h3><p class="muted">The frontend sends a request.</p></div>
+      <div class="card reveal"><h3><span class="badge-n">2</span> Work</h3><p class="muted">The server uses the database.</p></div>
+      <div class="card reveal"><h3><span class="badge-n">3</span> Answer</h3><p class="muted">A status code and data come back.</p></div>
+    </div>
+  </section>
+
+  <section class="block reveal" aria-labelledby="anat-h">
+    <div class="block-head"><h2 id="anat-h">Anatomy of a request</h2></div>
+    <div class="anatomy" id="anatomy" role="group" aria-label="Parts of a request">
+      <button type="button" class="m-get" data-k="method" aria-pressed="true">GET</button>
+      <button type="button" class="m-post" data-k="base" aria-pressed="false">https://petstore.swagger.io/v2</button>
+      <button type="button" class="m-put" data-k="path" aria-pressed="false">/pet/findByStatus</button>
+      <button type="button" class="m-delete" data-k="query" aria-pressed="false">?status=available</button>
+    </div>
+    <div class="note anatomy-note m-get" id="anatomyNote" aria-live="polite"><svg class="ico" aria-hidden="true"><use href="#i-info"></use></svg><p></p></div>
+  </section>
+
+  <section class="block reveal" aria-labelledby="sw-h">
+    <div class="block-head"><h2 id="sw-h">Swagger = the menu</h2></div>
+    <div class="swagger">
+      <div class="swagger-head"><b>Swagger Petstore</b>
+        <a class="btn btn--sm" href="https://petstore.swagger.io/" target="_blank" rel="noopener">Open Swagger</a></div>
+      <div class="sw-group">pet</div>
+      <a class="sw-op m-get" href="knights.html#GET"><span class="mbadge">GET</span><code>/pet/findByStatus</code><span class="d">Find pets</span></a>
+      <a class="sw-op m-post" href="knights.html#POST"><span class="mbadge">POST</span><code>/pet</code><span class="d">Add a pet</span></a>
+      <a class="sw-op m-put" href="knights.html#PUT"><span class="mbadge">PUT</span><code>/pet</code><span class="d">Update a pet</span></a>
+      <a class="sw-op m-delete" href="knights.html#DELETE"><span class="mbadge">DELETE</span><code>/pet/{petId}</code><span class="d">Delete a pet</span></a>
+      <div class="sw-group">user</div>
+      <a class="sw-op m-post" href="examples.html#register"><span class="mbadge">POST</span><code>/user</code><span class="d">Register</span></a>
+      <a class="sw-op m-get" href="examples.html#login"><span class="mbadge">GET</span><code>/user/login</code><span class="d">Log in</span></a>
+    </div>
+  </section>
+
+  <section class="block reveal" aria-labelledby="json-h">
+    <div class="block-head"><h2 id="json-h">JSON = the answer</h2></div>
+    <div class="json-map" id="jsonmap">
+      <pre aria-label="Example JSON"><span class="ln" tabindex="0" data-k="open">{</span><span class="ln" tabindex="0" data-k="id">  <span class="j-key">"id"</span>: <span class="j-num">7</span>,</span><span class="ln" tabindex="0" data-k="name">  <span class="j-key">"name"</span>: <span class="j-str">"Rex"</span>,</span><span class="ln" tabindex="0" data-k="category">  <span class="j-key">"category"</span>: { <span class="j-key">"name"</span>: <span class="j-str">"Dogs"</span> },</span><span class="ln" tabindex="0" data-k="status">  <span class="j-key">"status"</span>: <span class="j-str">"available"</span></span><span class="ln" tabindex="0" data-k="close">}</span></pre>
+      <div class="view" aria-label="How the frontend shows it">
+        <span class="tile" aria-hidden="true">R</span>
+        <h3><span class="part" data-k="name">Rex</span></h3>
+        <div><span class="part" data-k="category">Dogs</span> <span class="part" data-k="id">#7</span></div>
+        <div style="margin-top:8px"><span class="part" data-k="status"><span class="spill m-post">available</span></span></div>
+      </div>
+    </div>
+  </section>
+</main>
+</body>
+</html>
